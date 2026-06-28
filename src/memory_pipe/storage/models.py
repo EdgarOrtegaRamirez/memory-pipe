@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -36,9 +34,9 @@ class MemoryScore(BaseModel):
 
     importance: ImportanceLevel = ImportanceLevel.MEDIUM
     confidence: float = Field(ge=0.0, le=1.0, default=0.5)
-    last_accessed: Optional[float] = None
+    last_accessed: float | None = None
     access_count: int = Field(ge=0, default=0)
-    ttl_hours: Optional[float] = None  # None = permanent
+    ttl_hours: float | None = None  # None = permanent
 
     @property
     def effective_score(self) -> float:

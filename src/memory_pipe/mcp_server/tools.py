@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 from memory_pipe.engine.extractor import FactExtractor
 from memory_pipe.storage.database import MemoryDatabase
-from memory_pipe.storage.models import MemoryType
+from memory_pipe.storage.models import ImportanceLevel, MemoryType
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 """Tests for MemoryPipe fact extractor."""
 
-from memory_pipe.engine.extractor import ExtractionResult, FactExtractor
-from memory_pipe.storage.models import ImportanceLevel, MemoryType
+from memory_pipe.engine.extractor import FactExtractor
+from memory_pipe.storage.models import ImportanceLevel
 
 
 class TestFactExtractor:
@@ -68,7 +68,7 @@ class TestFactExtractor:
         assert result.total_facts >= 2  # Name and location from first turn, preference from third
 
     def test_extract_no_false_positives(self):
-        result = self.extractor.extract("The quick brown fox jumps over the lazy dog.")
+        self.extractor.extract("The quick brown fox jumps over the lazy dog.")
         # Should not extract facts from random sentences
 
     def test_extract_deduplication(self):
@@ -96,13 +96,11 @@ class TestFactExtractor:
         assert result.total_facts == 0
 
     def test_importance_assessment_critical(self):
-        from memory_pipe.storage.models import ImportanceLevel
         result = self.extractor.extract("I was born in 1990.")
         # Should detect birth year as important
         assert result.total_facts >= 0  # May not match pattern
 
     def test_importance_assessment_high_for_identity(self):
-        from memory_pipe.storage.models import ImportanceLevel
         result = self.extractor.extract("My name is Jane Smith.")
         assert result.total_facts >= 1
         # Identity facts should be high importance
@@ -111,7 +109,6 @@ class TestFactExtractor:
                 assert f.score.importance in (ImportanceLevel.HIGH, ImportanceLevel.CRITICAL)
 
     def test_importance_assessment_low_for_possession(self):
-        from memory_pipe.storage.models import ImportanceLevel
         result = self.extractor.extract("I have a red pen.")
         # Possession facts should be low importance
         for f in result.facts:
@@ -123,6 +120,9 @@ class TestFactExtractor:
         assert result.total_facts >= 0  # Should not crash
 
     def test_extract_result_total_facts(self):
-        text = "My name is Test. I love cats. Currently I'm working on a project."
+        text = ("My name is Test. I love cats. "
+                 "Currently I'm working on a project.")
         result = self.extractor.extract(text)
-        assert result.total_facts == len(result.facts) + len(result.preferences) + len(result.context)
+        total = len(result.facts) + len(result.preferences)
+        total += len(result.context)
+        assert result.total_facts == total

@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import time
 import uuid
-from typing import Optional
 
-import sqlite3
 import sqlite_utils
 
 from memory_pipe.storage.models import (
-    ConversationTurn,
     ContextEntry,
+    ConversationTurn,
     ImportanceLevel,
     MemoryItem,
     MemoryScore,
@@ -105,7 +104,7 @@ class MemoryDatabase:
         )
         return item.id
 
-    def get_memory(self, memory_id: str) -> Optional[MemoryItem]:
+    def get_memory(self, memory_id: str) -> MemoryItem | None:
         """Get a memory item by ID."""
         try:
             row = self._db["memories"].get(memory_id)
@@ -115,7 +114,7 @@ class MemoryDatabase:
             return None
         return self._row_to_memory(row)
 
-    def update_memory(self, memory_id: str, **kwargs) -> Optional[MemoryItem]:
+    def update_memory(self, memory_id: str, **kwargs) -> MemoryItem | None:
         """Update fields of a memory item."""
         updates: dict = {}
         for key, value in kwargs.items():
@@ -156,9 +155,9 @@ class MemoryDatabase:
 
     def list_memories(
         self,
-        memory_type: Optional[MemoryType] = None,
-        importance: Optional[ImportanceLevel] = None,
-        tags: Optional[list[str]] = None,
+        memory_type: MemoryType | None = None,
+        importance: ImportanceLevel | None = None,
+        tags: list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
         include_expired: bool = False,

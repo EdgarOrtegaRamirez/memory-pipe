@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +102,8 @@ class VectorStore:
 
         for entry_id, entry in self._entries.items():
             # Compute cosine similarity
-            dot = sum(q * e for q, e in zip(query_vector, entry.vector[:len(query_vector)]))
+            entry_vec = entry.vector[:len(query_vector)]
+            dot = sum(q * e for q, e in zip(query_vector, entry_vec, strict=False))
             q_norm = math.sqrt(sum(v * v for v in query_vector))
             e_norm = math.sqrt(sum(v * v for v in entry.vector))
 

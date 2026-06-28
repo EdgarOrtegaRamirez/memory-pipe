@@ -1,9 +1,10 @@
 """Tests for MemoryPipe models."""
 
 import time
+
 from memory_pipe.storage.models import (
-    ConversationTurn,
     ContextEntry,
+    ConversationTurn,
     ImportanceLevel,
     MemoryItem,
     MemoryScore,
@@ -59,14 +60,14 @@ class TestMemoryScore:
     def test_invalid_confidence_low(self):
         try:
             MemoryScore(confidence=-0.1)
-            assert False, "Should have raised"
+            raise AssertionError("Should have raised")
         except Exception:
             pass
 
     def test_invalid_confidence_high(self):
         try:
             MemoryScore(confidence=1.1)
-            assert False, "Should have raised"
+            raise AssertionError("Should have raised")
         except Exception:
             pass
 

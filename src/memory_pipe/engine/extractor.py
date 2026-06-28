@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import re
 import logging
+import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import ClassVar
 
 from memory_pipe.storage.models import (
     ImportanceLevel,
@@ -35,9 +35,10 @@ class FactExtractor:
     """Extract structured facts from conversational text."""
 
     # Patterns for detecting facts
-    FACT_PATTERNS = [
+    FACT_PATTERNS: ClassVar[list[tuple[str, str]]] = [
         # "I am / I'm ..."
-        (r"\b(?:i(?:'m| am))\s+([a-z][a-z\s,;.!?\-]+(?:\s+is\s+\w+)?(?:\s+at\s+\w+[^.]*)?)\b", "identity"),
+        (r"\b(?:i(?:'m| am))\s+([a-z][a-z\s,;.!?\-]+"
+         r"(?:\s+is\s+\w+)?(?:\s+at\s+\w+[^.]*)?)\b", "identity"),
         # "I live in / I work at / I study at"
         (r"\b(?:i(?:'m| am))\s+(?:living\s+)?(?:in|at)\s+([a-zA-Z\s,.\-]+?)(?:\.|$)", "location"),
         # "I work as / I work as a"
@@ -57,17 +58,23 @@ class FactExtractor:
     ]
 
     # Patterns for detecting preferences
-    PREFERENCE_PATTERNS = [
-        (r"\b(?:i(?:'m| am)|i)\s+(?:would\s+)?(?:prefer|like|love|enjoy|favor)\s+([a-zA-Z\s,]+?)(?:\.|$)", "preference"),
-        (r"\b(?:i(?:'m| am)|i)\s+(?:don't\s+(?:like|want|need)|dislike)\s+([a-zA-Z\s,]+?)(?:\.|$)", "anti_preference"),
-        (r"\bi\s+(?:always|never|usually|often|sometimes)\s+(?:like|prefer|use)\s+([a-zA-Z\s,]+?)(?:\.|$)", "habit"),
+    PREFERENCE_PATTERNS: ClassVar[list[tuple[str, str]]] = [
+        (r"\b(?:i(?:'m| am)|i)\s+(?:would\s+)?(?:prefer|like|love|enjoy|favor)"
+         r"\s+([a-zA-Z\s,]+?)(?:\.|$)", "preference"),
+        (r"\b(?:i(?:'m| am)|i)\s+(?:don't\s+(?:like|want|need)|dislike)"
+         r"\s+([a-zA-Z\s,]+?)(?:\.|$)", "anti_preference"),
+        (r"\bi\s+(?:always|never|usually|often|sometimes)\s+(?:like|prefer|use)"
+         r"\s+([a-zA-Z\s,]+?)(?:\.|$)", "habit"),
     ]
 
     # Patterns for detecting context
-    CONTEXT_PATTERNS = [
-        (r"\b(?:currently|right\s+now|these\s+days)\s+([a-zA-Z\s,]+?)(?:\.|$)", "current_state"),
-        (r"\b(?:in\s+the\s+future|going\s+to|plan\s+to)\s+([a-zA-Z\s,]+?)(?:\.|$)", "plan"),
-        (r"\b(?:used\s+to|previously|before)\s+([a-zA-Z\s,]+?)(?:\.|$)", "past"),
+    CONTEXT_PATTERNS: ClassVar[list[tuple[str, str]]] = [
+        (r"\b(?:currently|right\s+now|these\s+days)\s+"
+         r"([a-zA-Z\s,]+?)(?:\.|$)", "current_state"),
+        (r"\b(?:in\s+the\s+future|going\s+to|plan\s+to)\s+"
+         r"([a-zA-Z\s,]+?)(?:\.|$)", "plan"),
+        (r"\b(?:used\s+to|previously|before)\s+"
+         r"([a-zA-Z\s,]+?)(?:\.|$)", "past"),
     ]
 
     def __init__(self) -> None:
@@ -86,7 +93,7 @@ class FactExtractor:
             return ExtractionResult()
 
         result = ExtractionResult()
-        text_lower = text.lower()
+        _ = text.lower()
 
         # Extract facts
         for pattern, category in self.FACT_PATTERNS:
@@ -148,7 +155,8 @@ class FactExtractor:
 
         # Calculate overall confidence
         if result.total_facts > 0:
-            confidences = [f.score.confidence for f in result.facts + result.preferences + result.context]
+            all_items = result.facts + result.preferences + result.context
+            confidences = [f.score.confidence for f in all_items]
             result.confidence = sum(confidences) / len(confidences)
 
         # Deduplicate

@@ -1,10 +1,11 @@
 """Tests for MemoryPipe database."""
 
 import time
+
 from memory_pipe.storage.database import MemoryDatabase
 from memory_pipe.storage.models import (
-    ConversationTurn,
     ContextEntry,
+    ConversationTurn,
     ImportanceLevel,
     MemoryItem,
     MemoryScore,
@@ -72,8 +73,12 @@ class TestMemoryDatabase:
         assert len(prefs) == 1
 
     def test_list_memories_with_importance_filter(self):
-        self.db.add_memory(MemoryItem(content="low", score=MemoryScore(importance=ImportanceLevel.LOW)))
-        self.db.add_memory(MemoryItem(content="high", score=MemoryScore(importance=ImportanceLevel.HIGH)))
+        low_item = MemoryItem(content="low",
+                              score=MemoryScore(importance=ImportanceLevel.LOW))
+        high_item = MemoryItem(content="high",
+                               score=MemoryScore(importance=ImportanceLevel.HIGH))
+        self.db.add_memory(low_item)
+        self.db.add_memory(high_item)
 
         low = self.db.list_memories(importance=ImportanceLevel.LOW)
         assert len(low) == 1
@@ -208,7 +213,8 @@ class TestConversationStorage:
     def test_delete_conversation(self):
         session_id = "test_session_3"
         for i in range(3):
-            self.db.add_conversation_turn(session_id, ConversationTurn(role="user", content=f"msg {i}"))
+            turn = ConversationTurn(role="user", content=f"msg {i}")
+            self.db.add_conversation_turn(session_id, turn)
 
         deleted = self.db.delete_conversation(session_id)
         assert deleted == 3
@@ -254,9 +260,12 @@ class TestContextStorage:
 
     def test_context_sorted_by_relevance(self):
         session_id = "ctx_session_2"
-        self.db.add_context_entry(session_id, ContextEntry(category="c", content="low", relevance_score=0.1))
-        self.db.add_context_entry(session_id, ContextEntry(category="a", content="high", relevance_score=0.9))
-        self.db.add_context_entry(session_id, ContextEntry(category="b", content="medium", relevance_score=0.5))
+        low = ContextEntry(category="c", content="low", relevance_score=0.1)
+        high = ContextEntry(category="a", content="high", relevance_score=0.9)
+        med = ContextEntry(category="b", content="medium", relevance_score=0.5)
+        self.db.add_context_entry(session_id, low)
+        self.db.add_context_entry(session_id, high)
+        self.db.add_context_entry(session_id, med)
 
         retrieved = self.db.get_context(session_id)
         assert retrieved[0].relevance_score == 0.9
@@ -277,7 +286,10 @@ class TestCleanup:
         # Add a permanent memory
         self.db.add_memory(MemoryItem(content="permanent", score=MemoryScore(ttl_hours=None)))
         # Add an expired memory
-        expired = MemoryItem(content="expired", score=MemoryScore(ttl_hours=1.0, last_accessed=time.time() - 7200))
+        expired = MemoryItem(
+            content="expired",
+            score=MemoryScore(ttl_hours=1.0, last_accessed=time.time() - 7200),
+        )
         self.db.add_memory(expired)
 
         count = self.db.cleanup_expired()
@@ -288,17 +300,25 @@ class TestCleanup:
         assert remaining[0].content == "permanent"
 
     def test_cleanup_no_expired(self):
-        self.db.add_memory(MemoryItem(content="valid", score=MemoryScore(ttl_hours=24.0, last_accessed=time.time())))
+        item = MemoryItem(
+            content="valid",
+            score=MemoryScore(ttl_hours=24.0, last_accessed=time.time()),
+        )
+        self.db.add_memory(item)
         count = self.db.cleanup_expired()
         assert count == 0
 
     def test_get_expired_memories(self):
-        from memory_pipe.storage.models import MemoryItem as MI, MemoryScore as MS
-
-        self.db.add_memory(MI(content="expired1", score=MS(ttl_hours=1.0, last_accessed=time.time() - 7200)))
-        self.db.add_memory(MI(content="expired2", score=MS(ttl_hours=0.5, last_accessed=time.time() - 3600)))
-        self.db.add_memory(MI(content="valid", score=MS(ttl_hours=24.0, last_accessed=time.time())))
+        e1 = MemoryItem(content="expired1",
+                        score=MemoryScore(ttl_hours=1.0, last_accessed=time.time() - 7200))
+        e2 = MemoryItem(content="expired2",
+                        score=MemoryScore(ttl_hours=0.5, last_accessed=time.time() - 3600))
+        v = MemoryItem(content="valid",
+                       score=MemoryScore(ttl_hours=24.0, last_accessed=time.time()))
+        self.db.add_memory(e1)
+        self.db.add_memory(e2)
+        self.db.add_memory(v)
 
         expired = self.db.get_expired_memories()
         assert len(expired) == 2
-        assert set(m.content for m in expired) == {"expired1", "expired2"}
+        assert {m.content for m in expired} == {"expired1", "expired2"}

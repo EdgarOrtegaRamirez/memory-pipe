@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from memory_pipe.engine.extractor import ExtractionResult, FactExtractor
 from memory_pipe.search.vector_store import VectorStore
 from memory_pipe.storage.database import MemoryDatabase
 from memory_pipe.storage.models import (
-    ContextEntry,
     ConversationTurn,
     ImportanceLevel,
-    MemoryItem,
-    MemoryScore,
     MemoryType,
 )
 
@@ -26,7 +22,7 @@ class ContextBuilder:
     def __init__(
         self,
         db: MemoryDatabase,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: VectorStore | None = None,
         max_context_length: int = 2000,
     ):
         self.db = db
@@ -36,8 +32,8 @@ class ContextBuilder:
 
     def build_context(
         self,
-        user_query: Optional[str] = None,
-        session_id: Optional[str] = None,
+        user_query: str | None = None,
+        session_id: str | None = None,
         include_facts: bool = True,
         include_preferences: bool = True,
         include_recent: bool = True,
@@ -129,7 +125,7 @@ class ContextBuilder:
         logger.info("Built context with %d sections, %d chars", len(sections), len(context))
         return context
 
-    def extract_and_store(self, text: str, tags: Optional[list[str]] = None) -> ExtractionResult:
+    def extract_and_store(self, text: str, tags: list[str] | None = None) -> ExtractionResult:
         """Extract facts from text and store them in the database.
 
         Args:

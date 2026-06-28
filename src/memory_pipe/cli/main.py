@@ -4,24 +4,18 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 import click
 import yaml
 from rich.console import Console
 from rich.table import Table
-from rich.text import Text
 
 from memory_pipe.engine.context import ContextBuilder
 from memory_pipe.engine.extractor import FactExtractor
-from memory_pipe.search.vector_store import VectorStore
 from memory_pipe.storage.database import MemoryDatabase
 from memory_pipe.storage.models import (
-    ConversationTurn,
-    ContextEntry,
     ImportanceLevel,
     MemoryItem,
     MemoryScore,
@@ -32,7 +26,7 @@ logger = logging.getLogger("memory_pipe.cli")
 console = Console()
 
 
-def _load_config(config_path: Optional[str] = None) -> dict:
+def _load_config(config_path: str | None = None) -> dict:
     """Load configuration from a YAML file."""
     if config_path is None:
         return {}
@@ -40,7 +34,7 @@ def _load_config(config_path: Optional[str] = None) -> dict:
     if not path.exists():
         logger.warning("Config file not found: %s", config_path)
         return {}
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f) or {}
 
 
@@ -73,7 +67,7 @@ def _format_memory_table(memories: list[MemoryItem]) -> Table:
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose output")
 @click.option("--config", "config_path", type=click.Path(exists=True), help="Config file path")
 @click.pass_context
-def main(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
+def main(ctx: click.Context, verbose: bool, config_path: str | None) -> None:
     """MemoryPipe - AI Agent Memory & Context Persistence.
 
     Store, retrieve, and search facts, conversations, and context for AI agents.
@@ -83,17 +77,22 @@ def main(ctx: click.Context, verbose: bool, config_path: Optional[str]) -> None:
     ctx.obj["config"] = _load_config(config_path)
 
     if verbose:
-        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+        fmt = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+        logging.basicConfig(level=logging.DEBUG, format=fmt)
     else:
         logging.basicConfig(level=logging.WARNING)
 
 
 @main.command()
 @click.argument("content")
-@click.option("-t", "--type", "memory_type", type=click.Choice([m.value for m in MemoryType]), default="fact")
-@click.option("-i", "--importance", type=click.Choice([i.value for i in ImportanceLevel]), default="medium")
+@click.option("-t", "--type", "memory_type",
+              type=click.Choice([m.value for m in MemoryType]), default="fact")
+@click.option("-i", "--importance",
+              type=click.Choice([i.value for i in ImportanceLevel]),
+              default="medium")
 @click.option("-c", "--confidence", type=float, default=0.5, help="Extraction confidence (0.0-1.0)")
-@click.option("-T", "--tags", multiple=True, help="Tags for the memory (can be specified multiple times)")
+@click.option("-T", "--tags", multiple=True,
+              help="Tags for the memory (can be specified multiple times)")
 @click.option("-d", "--db", "db_path", default=":memory:", help="Database file path")
 @click.pass_context
 def add(
@@ -137,9 +136,9 @@ def add(
 @click.pass_context
 def list_memories(
     ctx: click.Context,
-    memory_id: Optional[str],
-    memory_type: Optional[str],
-    importance: Optional[str],
+    memory_id: str | None,
+    memory_type: str | None,
+    importance: str | None,
     tags: tuple[str, ...],
     limit: int,
     db_path: str,
@@ -262,7 +261,8 @@ def extract(
             ctx_item.tags.extend(tags)
         for item in result.facts + result.preferences + result.context:
             db.add_memory(item)
-        console.print(f"\n[green]✓[/] Saved {len(result.facts + result.preferences + result.context)} items to database")
+        all_items = result.facts + result.preferences + result.context
+        console.print(f"\n[green]✓[/] Saved {len(all_items)} items to database")
     db.close()
 
 
@@ -288,9 +288,9 @@ def history(
     else:
         console.print(f"[bold]Conversation History: {session_id}[/bold] ({len(turns)} turns)")
         for turn in turns:
-            role_icon = {"user": "[blue]Q[/]", "assistant": "[green]A[/]", "system": "[dim]S[/]"}.get(
-                turn.role, "[dim]?[/]"
-            )
+            icons = {"user": "[blue]Q[/]", "assistant": "[green]A[/]",
+                     "system": "[dim]S[/]"}
+            role_icon = icons.get(turn.role, "[dim]?[/]")
             content_preview = turn.content[:120]
             console.print(f"  {role_icon} {content_preview}")
 
@@ -375,8 +375,8 @@ def sample_config(ctx: click.Context) -> None:
 @click.pass_context
 def build_context(
     ctx: click.Context,
-    query: Optional[str],
-    session_id: Optional[str],
+    query: str | None,
+    session_id: str | None,
     db_path: str,
     as_json: bool,
 ) -> None:

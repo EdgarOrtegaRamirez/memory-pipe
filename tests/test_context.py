@@ -1,12 +1,11 @@
 """Tests for MemoryPipe context builder."""
 
 from memory_pipe.engine.context import ContextBuilder
-from memory_pipe.engine.extractor import FactExtractor
 from memory_pipe.search.vector_store import VectorStore
 from memory_pipe.storage.database import MemoryDatabase
 from memory_pipe.storage.models import (
-    ConversationTurn,
     ContextEntry,
+    ConversationTurn,
     ImportanceLevel,
     MemoryItem,
     MemoryScore,

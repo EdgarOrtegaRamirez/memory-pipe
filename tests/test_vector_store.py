@@ -1,7 +1,6 @@
 """Tests for MemoryPipe vector store."""
 
-import math
-from memory_pipe.search.vector_store import VectorStore, VectorEntry
+from memory_pipe.search.vector_store import VectorEntry, VectorStore
 
 
 class TestVectorStore:
